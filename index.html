@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coach de Productividad Ágil</title>
+    <style>
+        /* Diseño visual moderno */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-top: 0;
+        }
+        p {
+            text-align: center;
+            color: #7f8c8d;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 80px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #219653;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        /* Contenedor de la respuesta */
+        #resultado {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e8f8f5;
+            border-left: 5px solid #1abc9c;
+            border-radius: 0 8px 8px 0;
+            display: none;
+            line-height: 1.6;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            font-style: italic;
+            color: #3498db;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Tu Coach Ágil 🚀</h1>
+        <p>Ingresa tu actividad y deja que la IA organice tu tiempo en bloques Pomodoro.</p>
+
+        <div class="input-group">
+            <textarea id="tareaInput" placeholder="Ej: Avanzar informe final de la PUCP, o estructurar mi rutina en Smart Fit..."></textarea>
+            <button id="btnGenerar" onclick="enviarTarea()">Desglosar Actividad</button>
+        </div>
+
+        <div id="cargando" class="loader">
+            ⏳ El Coach está estructurando tu tiempo...
+        </div>
+
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        // Lógica de comunicación con tu motor en Python
+        async function enviarTarea() {
+            const inputTexto = document.getElementById('tareaInput').value;
+            const btn = document.getElementById('btnGenerar');
+            const cargando = document.getElementById('cargando');
+            const contenedorResultado = document.getElementById('resultado');
+
+            // Validar que no esté vacío
+            if (inputTexto.trim() === '') {
+                alert('Por favor, escribe una tarea primero.');
+                return;
+            }
+
+            // Cambiar la interfaz mientras carga
+            btn.disabled = true;
+            cargando.style.display = 'block';
+            contenedorResultado.style.display = 'none';
+
+            try {
+                // Aquí el Frontend llama al Backend que está corriendo en tu terminal
+                const respuesta = await fetch('https://agile-coach-backend.onrender.com/desglosar_tarea', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ descripcion: inputTexto })
+                });
+
+                const datos = await respuesta.json();
+
+                if (respuesta.ok) {
+                    // Formatear la respuesta (cambiar saltos de línea por <br> y **texto** por negritas)
+                    let textoFormateado = datos.resultado
+                        .replace(/\n/g, '<br>')
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    
+                    contenedorResultado.innerHTML = textoFormateado;
+                    contenedorResultado.style.display = 'block';
+                } else {
+                    contenedorResultado.innerHTML = '<strong>Error:</strong> No se pudo procesar la tarea.';
+                    contenedorResultado.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                contenedorResultado.innerHTML = '<strong>Error de conexión:</strong> Asegúrate de que tu servidor Python (main.py) esté encendido.';
+                contenedorResultado.style.display = 'block';
+            } finally {
+                // Restaurar la interfaz
+                btn.disabled = false;
+                cargando.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
